@@ -1,41 +1,47 @@
-name: Node.js CI
+name: Node.js Bot Runner (PAT Enabled)
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"   # har 30 min auto-run
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: bot-runner
   cancel-in-progress: true
 
 jobs:
-  build:
+  run-bot:
     runs-on: ubuntu-latest
+    timeout-minutes: 350   # ~6 ghante
 
     strategy:
       matrix:
         node-version: [20.x]
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repository (with PAT)
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Clean dependencies and install specific versions
+      - name: Clean & Install dependencies
         run: |
           rm -rf node_modules package-lock.json
           npm install cheerio@1.0.0-rc.12 css-select@5.1.0 --legacy-peer-deps
+          npm install --legacy-peer-deps
 
-      - name: Install remaining dependencies
-        run: npm install --legacy-peer-deps
-
-      - name: Start application
-        run: npm start
+      - name: Run bot with auto-restart
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          echo "Bot started with PAT token..."
+          while true; do
+            npm start
+            echo "Bot stopped/crashed, restarting in 5 seconds..."
+            sleep 5
+          done
