@@ -3,7 +3,7 @@ name: Node.js Bot Runner (PAT Enabled)
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/30 * * * *"   # har 30 min auto-run
+    - cron: "0 */6 * * *"   # 🔥 har 6 ghante restart
 
 concurrency:
   group: bot-runner
@@ -12,7 +12,7 @@ concurrency:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 350   # ~6 ghante
+    timeout-minutes: 350   # ~6 ghante (GitHub limit)
 
     strategy:
       matrix:
@@ -35,13 +35,9 @@ jobs:
           npm install cheerio@1.0.0-rc.12 css-select@5.1.0 --legacy-peer-deps
           npm install --legacy-peer-deps
 
-      - name: Run bot with auto-restart
+      - name: Run bot (6 hours max)
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          echo "Bot started with PAT token..."
-          while true; do
-            npm start
-            echo "Bot stopped/crashed, restarting in 5 seconds..."
-            sleep 5
-          done
+          echo "Bot started at $(date)"
+          npm start
