@@ -1,12 +1,12 @@
-name: PRINCE MDXI Bot Runner
+name: PRINCE MDXI Bot Auto Update
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 */6 * * *"   # har 6 ghante auto run
 
 concurrency:
-  group: prince-bot
+  group: prince-mdxi-bot
   cancel-in-progress: true
 
 jobs:
@@ -15,12 +15,17 @@ jobs:
     timeout-minutes: 350
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Latest Repo
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.PAT_TOKEN }}
+          fetch-depth: 0
 
-      - name: Setup Node.js
+      - name: Pull Latest Update
+        run: |
+          git pull origin main || true
+
+      - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 20
@@ -28,16 +33,19 @@ jobs:
       - name: Install PM2
         run: npm install -g pm2
 
-      - name: Install Dependencies
+      - name: Install Modules
         run: |
           rm -rf node_modules package-lock.json
           npm install --legacy-peer-deps
 
-      - name: Start Bot with PM2
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+      - name: Start Bot
         run: |
           echo "Bot started at $(date)"
           pm2 start npm --name prince-mdxi -- start
-          pm2 save
-          pm2 logs --lines 100
+
+      - name: Auto Restart Bot
+        run: |
+          pm2 restart prince-mdxi || pm2 start npm --name prince-mdxi -- start
+
+      - name: Show Logs
+        run: pm2 logs prince-mdxi --lines 100
