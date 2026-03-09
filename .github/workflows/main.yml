@@ -1,12 +1,12 @@
-name: Node.js Bot Runner (PM2 Auto Restart)
+name: PRINCE MDXI Bot Runner
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"   # har 6 ghante restart
+    - cron: "0 */6 * * *"
 
 concurrency:
-  group: bot-runner
+  group: prince-bot
   cancel-in-progress: true
 
 jobs:
@@ -14,12 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 350
 
-    strategy:
-      matrix:
-        node-version: [20.x]
-
     steps:
-      - name: Checkout repository (with PAT)
+      - name: Checkout Repository
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.PAT_TOKEN }}
@@ -27,15 +23,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20
 
       - name: Install PM2
         run: npm install -g pm2
 
-      - name: Clean & Install dependencies
+      - name: Install Dependencies
         run: |
           rm -rf node_modules package-lock.json
-          npm install cheerio@1.0.0-rc.12 css-select@5.1.0 --legacy-peer-deps
           npm install --legacy-peer-deps
 
       - name: Start Bot with PM2
@@ -43,6 +38,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           echo "Bot started at $(date)"
-          pm2 start start.js --name whatsapp-bot
+          pm2 start npm --name prince-mdxi -- start
           pm2 save
           pm2 logs --lines 100
